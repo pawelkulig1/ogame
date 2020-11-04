@@ -11,7 +11,11 @@ namespace ogame {
     using SEC = int_fast64_t;
     using REQ = std::vector<std::pair<int, LVL> >;
     using TEMP = int_fast16_t;
+
     inline constexpr LVL max_lvl = 40;
+    inline constexpr double collector_extraction_bonus = 0.25;
+    inline constexpr double geologist_extraction_bonus = 0.1;
+    inline constexpr double crawler_extraction_bonus = 0.02;
 
     enum class MINE {
         METAL_MINE,
@@ -72,36 +76,27 @@ namespace ogame {
         bool has_technocrat = false;
         bool has_admiral = false;
         bool has_commander = false;
+        LVL plasma_technology_lvl = 0;
     };
-
-    enum ENCHANCEMENT {
-        M_10,
-        M_20,
-        M_30,
-        M_40,
-        C_10,
-        C_20,
-        C_30,
-        C_40,
-        D_10,
-        D_20,
-        D_30,
-        D_40
-    }
 
     struct PLANET_OPTIONS {
         int position = 8;
         TEMP max_planet_temperature = 75;
         int number_of_crawlers = 0;
-        std::list<ENCHANCEMENT> active_enchancements = {};
+        double m_enchancement = 0.0;
+        double c_enchancement = 0.0;
+        double d_enchancement = 0.0;
+        double e_enchancement = 0.0;
     };
 
     //MINES
     constexpr RES get_metal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
-    constexpr RES get_crystal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
-    constexpr RES get_deuterium_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
+    constexpr RES get_crystal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
+    constexpr RES get_deuterium_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
     constexpr RES get_energy_consumption(MINE m, LVL lvl);
-    
+    constexpr int get_max_number_of_crawlers(LVL metal_mine, LVL crystal_mine, LVL deuterium_extractor);
+    constexpr double position_extraction_bonus(int planet_position);
+
     //ENERGY
     constexpr RES get_solar_plant_production(LVL lvl);
     RES get_fusion_reactor_production(LVL lvl, LVL energetic_technology_lvl);
@@ -110,19 +105,12 @@ namespace ogame {
     //FUSION
     constexpr RES get_fusion_deuterium_consumption(LVL lvl);
     
-    //ALL
     //CONSTRUCTION
     RES get_construction_cost_m(const CONSTRUCTION& c, LVL lvl);
     RES get_construction_cost_c(const CONSTRUCTION& c, LVL lvl);
     RES get_construction_cost_d(const CONSTRUCTION& c, LVL lvl);
     RES get_construction_cost_e(const CONSTRUCTION& c, LVL lvl);
     RESOURCES get_construction_cost(const CONSTRUCTION& c, LVL lvl);
-
-    //DOWNGRADE
-    //constexpr RES get_destruction_cost_m(const CONSTRUCTION& c, LVL lvl);
-    //constexpr RES get_destruction_cost_c(const CONSTRUCTION& c, LVL lvl);
-    //constexpr RES get_destruction_cost_d(const CONSTRUCTION& c, LVL lvl);
-    //constexpr RESOURCES get_construction_cost(const CONSTRUCTION& c, LVL lvl);
 
     SEC get_building_construction_time(const CONSTRUCTION& c, LVL lvl, LVL robot_factory_lvl, LVL nanite_factory_lvl);
     SEC get_technology_construction_time(const CONSTRUCTION& c, LVL lvl, LVL laboratory_lvl);
@@ -178,23 +166,94 @@ namespace ogame {
     int power_cache::cache_hit = 0;
 
     //DEFINITIONS ********************************************************************************
+    constexpr double position_extraction_bonus_c(int planet_position)
+    {
+        switch (planet_position) {
+            case 1:
+                return 0.4;
+            case 2:
+                return 0.3;
+            case 3:
+                return 0.2;
+            default:
+                return 0.0;
+        }
+    }
+    constexpr double position_extraction_bonus_m(int planet_position)
+    {
+        switch (planet_position) {
+            case 6:
+            case 10:
+                return 0.17;
+            case 7:
+            case 9:
+                return 0.23;
+            case 8:
+                return 0.35;
+            default:
+                return 0.0;
+        }
+    }
 
-    constexpr RES get_metal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
+    constexpr int get_max_number_of_crawlers(LVL metal_mine, LVL crystal_mine, LVL deuterium_extractor) {
+        return (metal_mine + crystal_mine + deuterium_extractor) * 8;
+    }
+
+    constexpr RES calculate_additional_extraction(RES mine_extraction, double enchancement, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
+    {
+        const bool is_collector = player_options.player_class == PLAYER_CLASS::COLLECTOR;
+        const RES collector_bonus = is_collector * round(mine_extraction * collector_extraction_bonus);
+        const RES geologist_bonus = player_options.has_geologist * round(mine_extraction * geologist_extraction_bonus);
+        const RES enchancement_bonus = round(mine_extraction * enchancement);
+        const RES plasma_bonus = round(mine_extraction * (player_options.plasma_technology_lvl / 100.0));
+        const RES crawlers_bonus = round(planet_options.number_of_crawlers * crawler_extraction_bonus * (1.0 + (0.5 * is_collector)));
+
+        return collector_bonus + geologist_bonus + enchancement_bonus + plasma_bonus + crawlers_bonus;
+    }
+
+    constexpr RES get_metal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, 
+                                       const PLAYER_OPTIONS& player_options)
     {
         static_assert(lvl_cache[1] != 0);
-        return floor(30 * lvl_cache[lvl] + 30);
+
+        constexpr RES default_extraction = 30;
+        constexpr RES extraction_multiplier = 30;
+        const double position_bonus = position_extraction_bonus_m(planet_options.position);
+        const RES planet_extraction = floor(default_extraction * (1 + position_bonus));
+        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
+                                                   
+        RES extraction = player_options.universe_speed * floor(planet_extraction + mine_extraction
+                         + calculate_additional_extraction(mine_extraction, planet_options.m_enchancement, planet_options, player_options));
+        return extraction;
     }
 
     constexpr RES get_crystal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
         static_assert(lvl_cache[1] != 0);
-        return floor(20 * lvl_cache[lvl] + 15);
+
+        constexpr RES default_extraction = 15;
+        constexpr RES extraction_multiplier = 20;
+        const double position_bonus = position_extraction_bonus_c(planet_options.position);
+        const RES planet_extraction = floor(default_extraction * (1 + position_bonus));
+        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
+
+        RES extraction = player_options.universe_speed * floor(planet_extraction + mine_extraction
+                         + calculate_additional_extraction(mine_extraction, planet_options.c_enchancement, planet_options, player_options));
+        return extraction;
     }
 
     constexpr RES get_deuterium_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
         static_assert(lvl_cache[1] != 0);
-        return floor(10 * lvl_cache[lvl] * 1.44 - 0.004 * max_planet_temperature);
+        constexpr RES default_extraction = 0;
+        constexpr RES extraction_multiplier = 10;
+        const double position_bonus = 0.0;
+        const RES planet_extraction = floor(default_extraction * (1 + position_bonus));
+        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1.44 - 0.004 * planet_options.max_planet_temperature) * (1 + position_bonus));
+
+        RES extraction = player_options.universe_speed * floor(planet_extraction + mine_extraction
+                         + calculate_additional_extraction(mine_extraction, planet_options.d_enchancement, planet_options, player_options));
+        return extraction;
     }
 
     constexpr RES get_energy_consumption(MINE m, LVL lvl)
@@ -255,16 +314,6 @@ namespace ogame {
                          get_construction_cost_d(c, lvl),
                          get_construction_cost_e(c, lvl)};
     }
-
-    //DOWNGRADE
-   // constexpr RES get_destruction_cost_m(const CONSTRUCTION& c, LVL lvl)
-   // {
-   //             
-   // }
-
-   // constexpr RES get_destruction_cost_c(const CONSTRUCTION& c, LVL lvl);
-   // constexpr RES get_destruction_cost_d(const CONSTRUCTION& c, LVL lvl);
-   // constexpr RESOURCES get_construction_cost(const CONSTRUCTION& c, LVL lvl);
 
     SEC get_building_construction_time(const CONSTRUCTION& c, LVL lvl, LVL robot_factory_lvl, LVL nanite_factory_lvl)
     {
