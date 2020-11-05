@@ -14,8 +14,13 @@ namespace ogame {
 
     inline constexpr LVL max_lvl = 40;
     inline constexpr double collector_extraction_bonus = 0.25;
+    inline constexpr double collector_energy_bonus = 0.1;
     inline constexpr double geologist_extraction_bonus = 0.1;
+    inline constexpr double engineer_energy_bonus = 0.1;
     inline constexpr double crawler_extraction_bonus = 0.02;
+	inline constexpr double commanding_staff_energy_bonus = 0.1;
+	inline constexpr double commanding_staff_extraction_bonus = 0.1;
+
 
     enum class MINE {
         METAL_MINE,
@@ -32,12 +37,12 @@ namespace ogame {
 
     enum CONSTRUCTIONS
     {
-        METAL_MINE,
-        CRYSTAL_MINE,
-        DEUTERIUM_EXTRACTOR,
-        SOLAR_PLANT,
-        FUSION_REACTOR,
-        SOLAR_SATELITE
+        METAL_MINE_ID,
+        CRYSTAL_MINE_ID,
+        DEUTERIUM_SYNTHESIZER_ID,
+        SOLAR_PLANT_ID,
+        FUSION_REACTOR_ID,
+        SOLAR_SATELITE_ID
     };
 
     enum CONSTRUCTION_QUEUE
@@ -62,6 +67,71 @@ namespace ogame {
         RESOURCES default_cost;
     };
 
+
+	//BUILDINGS
+	const CONSTRUCTION METAL_MINE {CONSTRUCTIONS::METAL_MINE_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									1.5, {}, RESOURCES{60, 15, 0, 0}};
+	
+	const CONSTRUCTION CRYSTAL_MINE {CONSTRUCTIONS::CRYSTAL_MINE_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									1.6, {}, RESOURCES{48, 24, 0, 0}};
+	
+	const CONSTRUCTION DEUTERIUM_SYNTHESIZER {CONSTRUCTIONS::DEUTERIUM_SYNTHESIZER_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									1.5, {}, RESOURCES{225, 75, 0, 0}};
+
+	const CONSTRUCTION SOLAR_PLANT {CONSTRUCTIONS::SOLAR_PLANT_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									1.5, {}, RESOURCES{75, 30, 0, 0}};
+	
+	const CONSTRUCTION FUSION_REACTOR {CONSTRUCTIONS::FUSION_REACTOR_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									1.8, {{DEUTERIUM_SYNTHESIZER_ID, 5}, {ENERGY_TECHNOLOGY_ID, 3}}, 
+									RESOURCES{900, 360, 180, 0}};
+
+	const CONSTRUCTION ROBOTICS_FACTORY{CONSTRUCTIONS::ROBOTICS_FACTORY_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{400, 120, 200, 0}};
+
+	const CONSTRUCTION NANITE_FACTORY {CONSTRUCTIONS::NANITE_FACTORY_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {{ROBOTICS_FACTORY_ID, 10}, {COMPUTER_TECHNOLOGY_ID, 10}}, RESOURCES{1000000, 500000, 100000, 0}};
+
+	const CONSTRUCTION SHIPYARD{CONSTRUCTIONS::SHIPYARD_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {{SHIPYARD_ID, 2}}, RESOURCES{400, 200, 100, 0}};
+
+	const CONSTRUCTION METAL_STORAGE {CONSTRUCTIONS::METAL_STORAGE, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{1000, 0, 0, 0}};
+
+	const CONSTRUCTION CRYSTAL_STORAGE {CONSTRUCTIONS::CRYSTAL_STORAGE_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{1000, 500, 0, 0}};
+
+	const CONSTRUCTION DEUTERIUM_TANK {CONSTRUCTIONS::DEUTERIUM_TANK_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{1000, 1000, 0, 0}};
+
+	const CONSTRUCTION RESEARCH_LAB {CONSTRUCTIONS::RESEARCH_LAB_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{200, 400, 200, 0}};
+
+	const CONSTRUCTION TERRAFORMER {CONSTRUCTIONS::TERRAFORMER_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {{NANITE_FACTORY_ID, 10}, {ENERGY_TECHNOLOGY_ID, 12}}, RESOURCES{0, 50000, 100000, 1000}};
+
+	const CONSTRUCTION ALIANCE_DEPOT {CONSTRUCTIONS::ALIANCE_DEPOT, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{20000, 40000, 0, 0}};
+
+	const CONSTRUCTION SPACE_DOCK {CONSTRUCTIONS::SPACE_DOCK_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {}, RESOURCES{200, 0, 50, 50}};
+
+	const CONSTRUCTION MISSLE_SILO {CONSTRUCTIONS::MISSLE_SILO_ID, CONSTRUCTION_QUEUE::BUILDING, 
+									2.0, {{SHIPYARD_ID, 1}}, RESOURCES{20000, 20000, 1000, 0}};
+
+	//TECHNOLOGIES
+	
+
+	const CONSTRUCTION COMPUTER_TECHNOLOGY {CONSTRUCTIONS::COMPUTER_TECHNOLOGY_ID, CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									2.0, {}, RESOURCES{0, 400, 600, 0}};
+
+	const CONSTRUCTION WEAPONS_TECHNOLOGY {CONSTRUCTIONS::WEAPONS_TECHNOLOGY_ID, CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									2.0, {}, RESOURCES{800, 200, 0, 0}};
+	
+	const CONSTRUCTION SHIELDING_TECHNOLOGY {CONSTRUCTIONS::SHIELDING_TECHNOLOGY, CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									2.0, {}, RESOURCES{200, 600, 0, 0}};
+
+	const CONSTRUCTION ARMOUR_TECHNOLOGY {CONSTRUCTIONS::ARMOUR_TECHNOLOGY_ID, CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									2.0, {}, RESOURCES{1000, 0, 0, 0}};
     enum PLAYER_CLASS {
         COLLECTOR,
         GENERAL,
@@ -70,13 +140,14 @@ namespace ogame {
 
     struct PLAYER_OPTIONS {
         PLAYER_CLASS player_class = PLAYER_CLASS::COLLECTOR;
-        int universe_speed = 1;
-        bool has_engineer = false;
-        bool has_geologist = false;
-        bool has_technocrat = false;
-        bool has_admiral = false;
-        bool has_commander = false;
-        LVL plasma_technology_lvl = 0;
+        int universe_speed{1};
+        bool has_engineer{false};
+        bool has_geologist{false};
+        bool has_technocrat{false};
+        bool has_admiral{false};
+        bool has_commander{false};
+        LVL plasma_technology_lvl{0};
+		LVL energetic_technology_lvl{0};
     };
 
     struct PLANET_OPTIONS {
@@ -199,7 +270,19 @@ namespace ogame {
         return (metal_mine + crystal_mine + deuterium_extractor) * 8;
     }
 
-    constexpr RES calculate_additional_extraction(RES mine_extraction, double enchancement, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
+	inline constexpr bool has_all_commanding_staff(const PLAYER_OPTIONS& player_options)
+	{
+		return (player_options.has_admiral
+			   	&& player_options.has_engineer
+				&& player_options.has_commander
+			   	&& player_options.has_geologist
+			   	&& player_options.has_technocrat);
+	}
+
+    inline constexpr RES calculate_additional_extraction(RES mine_extraction, 
+												  double enchancement, 
+												  const PLANET_OPTIONS& planet_options, 
+												  const PLAYER_OPTIONS& player_options)
     {
         const bool is_collector = player_options.player_class == PLAYER_CLASS::COLLECTOR;
         const RES collector_bonus = is_collector * round(mine_extraction * collector_extraction_bonus);
@@ -207,8 +290,9 @@ namespace ogame {
         const RES enchancement_bonus = round(mine_extraction * enchancement);
         const RES plasma_bonus = round(mine_extraction * (player_options.plasma_technology_lvl / 100.0));
         const RES crawlers_bonus = round(planet_options.number_of_crawlers * crawler_extraction_bonus * (1.0 + (0.5 * is_collector)));
+		const RES commanding_staff_bonus = round(has_all_commanding_staff(player_options) * commanding_staff_extraction_bonus);
 
-        return collector_bonus + geologist_bonus + enchancement_bonus + plasma_bonus + crawlers_bonus;
+        return collector_bonus + geologist_bonus + enchancement_bonus + plasma_bonus + crawlers_bonus + commanding_staff_bonus;
     }
 
     constexpr RES get_metal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, 
@@ -245,13 +329,10 @@ namespace ogame {
     constexpr RES get_deuterium_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
         static_assert(lvl_cache[1] != 0);
-        constexpr RES default_extraction = 0;
         constexpr RES extraction_multiplier = 10;
-        const double position_bonus = 0.0;
-        const RES planet_extraction = floor(default_extraction * (1 + position_bonus));
-        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1.44 - 0.004 * planet_options.max_planet_temperature) * (1 + position_bonus));
+        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1.44 - 0.004 * planet_options.max_planet_temperature));
 
-        RES extraction = player_options.universe_speed * floor(planet_extraction + mine_extraction
+        RES extraction = player_options.universe_speed * floor(mine_extraction
                          + calculate_additional_extraction(mine_extraction, planet_options.d_enchancement, planet_options, player_options));
         return extraction;
     }
@@ -264,19 +345,44 @@ namespace ogame {
 
     
     //ENERGY
-    constexpr RES get_solar_plant_production(LVL lvl)
+	
+	inline constexpr RES calculate_additional_energy(RES production, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
+	{
+        const bool is_collector = player_options.player_class == PLAYER_CLASS::COLLECTOR;
+        const RES collector_bonus = is_collector * round(production * collector_energy_bonus);
+        const RES engineer_bonus = player_options.has_engineer * round(production * engineer_energy_bonus);
+        const RES enchancement_bonus = round(production * planet_options.e_enchancement);
+		const RES commanding_staff_bonus = round(has_all_commanding_staff(player_options) * commanding_staff_energy_bonus);
+			
+		return collector_bonus + engineer_bonus + enchancement_bonus + commanding_staff_bonus;
+	}
+
+    constexpr RES get_solar_plant_production(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
-        return floor(20 * lvl_cache[lvl]);
+        constexpr RES production_multiplier = 20;
+        const RES production = floor(production_multiplier * lvl_cache[lvl]);
+        const RES extraction = player_options.universe_speed * floor(production
+                         + calculate_additional_energy(production, planet_options, player_options));
+        return extraction;
     }
 
-    RES get_fusion_reactor_production(LVL lvl, LVL energetic_technology_lvl)
+    RES get_fusion_reactor_production(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
-        return floor(30 * lvl * power_cache::pow((1.05 + energetic_technology_lvl * 0.01), lvl));
+        constexpr RES production_multiplier = 30;
+        const RES production = floor(production_multiplier * lvl * power_cache::pow((1.05 + player_options.energetic_technology_lvl * 0.01), lvl));
+
+        const RES extraction = player_options.universe_speed * floor(production
+                         + calculate_additional_energy(production, planet_options, player_options));
+        return extraction;
     }
     
-    constexpr RES get_solar_satelite_production(LVL lvl, TEMP max_planet_temperature)
+    constexpr RES get_solar_satelite_production(const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
-        return floor((max_planet_temperature + 140) / 6);
+        const RES production = floor((planet_options.max_planet_temperature + 140.0) / 6.0);
+
+        const RES extraction = player_options.universe_speed * floor(production
+                         + calculate_additional_energy(production, planet_options, player_options));
+        return extraction;
     }
 
     //FUSION
