@@ -1,6 +1,6 @@
 #include "catch.hpp"
-
 #include "ogame.h"
+
 
 TEST_CASE( "Metal Mine" ) {
     using namespace ogame;
