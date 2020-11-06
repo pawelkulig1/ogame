@@ -13,13 +13,14 @@ namespace ogame {
     using TEMP = int_fast16_t;
 
     inline constexpr LVL max_lvl = 40;
+    inline constexpr int universe_speed = 1;
     inline constexpr double collector_extraction_bonus = 0.25;
     inline constexpr double collector_energy_bonus = 0.1;
     inline constexpr double geologist_extraction_bonus = 0.1;
     inline constexpr double engineer_energy_bonus = 0.1;
     inline constexpr double crawler_extraction_bonus = 0.02;
 	inline constexpr double commanding_staff_energy_bonus = 0.1;
-	inline constexpr double commanding_staff_extraction_bonus = 0.1;
+	inline constexpr double commanding_staff_extraction_bonus = 0.02;
 
 
     enum class MINE {
@@ -42,14 +43,45 @@ namespace ogame {
         DEUTERIUM_SYNTHESIZER_ID,
         SOLAR_PLANT_ID,
         FUSION_REACTOR_ID,
-        SOLAR_SATELITE_ID
+        ROBOTICS_FACTORY_ID,
+        NANITE_FACTORY_ID,
+        SHIPYARD_ID,
+        METAL_STORAGE_ID,
+        CRYSTAL_STORAGE_ID,
+        DEUTERIUM_TANK_ID,
+        RESEARCH_LAB_ID,
+        TERRAFORMER_ID,
+        ALIANCE_DEPOT_ID,
+        SPACE_DOCK_ID,
+        MISSLE_SILO_ID,
+
+        ESPIONAGE_TECHNOLOGY_ID,
+        COMPUTER_TECHNOLOGY_ID,
+        WEAPONS_TECHNOLOGY_ID,
+        SHIELDING_TECHNOLOGY_ID,
+        ARMOUR_TECHNOLOGY_ID,
+        ENERGY_TECHNOLOGY_ID,
+        COMBUSTION_DRIVE_ID,
+        IMPULSE_DRIVE_ID,
+        HYPERSPACE_DRIVE_ID,
+        HYPERSPACE_TECHNOLOGY_ID,
+        LASER_TECHNOLOGY_ID,
+        ION_TECHNOLOGY_ID,
+        PLASMA_TECHNOLOGY_ID,
+        INTERGALACTIC_RESEARCH_NETWORK_ID,
+        ASTROPHYSICS_ID,
+        GRAVITON_TECHNOLOGY_ID,
+
+        SOLAR_SATELITE_ID,
+        SMALL_CARGO_ID,
+        COLONY_SHIP_ID
     };
 
     enum CONSTRUCTION_QUEUE
     {
         BUILDING,
         TECHNOLOGY,
-        SHIPYARD
+        SHIPYARD_QUEUE
     };
 
     struct RESOURCES {
@@ -75,27 +107,34 @@ namespace ogame {
 	const CONSTRUCTION CRYSTAL_MINE {CONSTRUCTIONS::CRYSTAL_MINE_ID, CONSTRUCTION_QUEUE::BUILDING, 
 									1.6, {}, RESOURCES{48, 24, 0, 0}};
 	
-	const CONSTRUCTION DEUTERIUM_SYNTHESIZER {CONSTRUCTIONS::DEUTERIUM_SYNTHESIZER_ID, CONSTRUCTION_QUEUE::BUILDING, 
+	const CONSTRUCTION DEUTERIUM_SYNTHESIZER {CONSTRUCTIONS::DEUTERIUM_SYNTHESIZER_ID, 
+                                    CONSTRUCTION_QUEUE::BUILDING, 
 									1.5, {}, RESOURCES{225, 75, 0, 0}};
 
 	const CONSTRUCTION SOLAR_PLANT {CONSTRUCTIONS::SOLAR_PLANT_ID, CONSTRUCTION_QUEUE::BUILDING, 
 									1.5, {}, RESOURCES{75, 30, 0, 0}};
 	
-	const CONSTRUCTION FUSION_REACTOR {CONSTRUCTIONS::FUSION_REACTOR_ID, CONSTRUCTION_QUEUE::BUILDING, 
+	const CONSTRUCTION FUSION_REACTOR {CONSTRUCTIONS::FUSION_REACTOR_ID, 
+                                    CONSTRUCTION_QUEUE::BUILDING, 
 									1.8, {{DEUTERIUM_SYNTHESIZER_ID, 5}, {ENERGY_TECHNOLOGY_ID, 3}}, 
 									RESOURCES{900, 360, 180, 0}};
 
 	const CONSTRUCTION ROBOTICS_FACTORY{CONSTRUCTIONS::ROBOTICS_FACTORY_ID, CONSTRUCTION_QUEUE::BUILDING, 
 									2.0, {}, RESOURCES{400, 120, 200, 0}};
 
-	const CONSTRUCTION NANITE_FACTORY {CONSTRUCTIONS::NANITE_FACTORY_ID, CONSTRUCTION_QUEUE::BUILDING, 
-									2.0, {{ROBOTICS_FACTORY_ID, 10}, {COMPUTER_TECHNOLOGY_ID, 10}}, RESOURCES{1000000, 500000, 100000, 0}};
+	const CONSTRUCTION NANITE_FACTORY {CONSTRUCTIONS::NANITE_FACTORY_ID, 
+                                      CONSTRUCTION_QUEUE::BUILDING, 
+									  2.0, {{ROBOTICS_FACTORY_ID, 10}, {COMPUTER_TECHNOLOGY_ID, 10}},
+                                      RESOURCES{1000000, 500000, 100000, 0}};
 
-	const CONSTRUCTION SHIPYARD{CONSTRUCTIONS::SHIPYARD_ID, CONSTRUCTION_QUEUE::BUILDING, 
-									2.0, {{SHIPYARD_ID, 2}}, RESOURCES{400, 200, 100, 0}};
+	const CONSTRUCTION SHIPYARD{CONSTRUCTIONS::SHIPYARD_ID, 
+                                CONSTRUCTION_QUEUE::BUILDING, 
+								2.0, {{SHIPYARD_ID, 2}}, 
+                                RESOURCES{400, 200, 100, 0}};
 
-	const CONSTRUCTION METAL_STORAGE {CONSTRUCTIONS::METAL_STORAGE, CONSTRUCTION_QUEUE::BUILDING, 
-									2.0, {}, RESOURCES{1000, 0, 0, 0}};
+	const CONSTRUCTION METAL_STORAGE {CONSTRUCTIONS::METAL_STORAGE_ID, 
+                                     CONSTRUCTION_QUEUE::BUILDING, 
+									 2.0, {}, RESOURCES{1000, 0, 0, 0}};
 
 	const CONSTRUCTION CRYSTAL_STORAGE {CONSTRUCTIONS::CRYSTAL_STORAGE_ID, CONSTRUCTION_QUEUE::BUILDING, 
 									2.0, {}, RESOURCES{1000, 500, 0, 0}};
@@ -109,7 +148,7 @@ namespace ogame {
 	const CONSTRUCTION TERRAFORMER {CONSTRUCTIONS::TERRAFORMER_ID, CONSTRUCTION_QUEUE::BUILDING, 
 									2.0, {{NANITE_FACTORY_ID, 10}, {ENERGY_TECHNOLOGY_ID, 12}}, RESOURCES{0, 50000, 100000, 1000}};
 
-	const CONSTRUCTION ALIANCE_DEPOT {CONSTRUCTIONS::ALIANCE_DEPOT, CONSTRUCTION_QUEUE::BUILDING, 
+	const CONSTRUCTION ALIANCE_DEPOT {CONSTRUCTIONS::ALIANCE_DEPOT_ID, CONSTRUCTION_QUEUE::BUILDING, 
 									2.0, {}, RESOURCES{20000, 40000, 0, 0}};
 
 	const CONSTRUCTION SPACE_DOCK {CONSTRUCTIONS::SPACE_DOCK_ID, CONSTRUCTION_QUEUE::BUILDING, 
@@ -120,18 +159,106 @@ namespace ogame {
 
 	//TECHNOLOGIES
 	
+	const CONSTRUCTION ESPIONAGE_TECHNOLOGY {CONSTRUCTIONS::ESPIONAGE_TECHNOLOGY_ID, 
+                                            CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									        2.0, {{RESEARCH_LAB_ID, 3}}, 
+                                            RESOURCES{200, 1000, 200, 0}};
 
-	const CONSTRUCTION COMPUTER_TECHNOLOGY {CONSTRUCTIONS::COMPUTER_TECHNOLOGY_ID, CONSTRUCTION_QUEUE::TECHNOLOGY, 
-									2.0, {}, RESOURCES{0, 400, 600, 0}};
+	const CONSTRUCTION COMPUTER_TECHNOLOGY {CONSTRUCTIONS::COMPUTER_TECHNOLOGY_ID, 
+                                            CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									        2.0, {{RESEARCH_LAB_ID, 1}}, 
+                                            RESOURCES{0, 400, 600, 0}};
 
-	const CONSTRUCTION WEAPONS_TECHNOLOGY {CONSTRUCTIONS::WEAPONS_TECHNOLOGY_ID, CONSTRUCTION_QUEUE::TECHNOLOGY, 
-									2.0, {}, RESOURCES{800, 200, 0, 0}};
+	const CONSTRUCTION WEAPONS_TECHNOLOGY {CONSTRUCTIONS::WEAPONS_TECHNOLOGY_ID, 
+                                           CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									       2.0, {{RESEARCH_LAB_ID, 4}}, 
+                                           RESOURCES{800, 200, 0, 0}};
+
+	const CONSTRUCTION ARMOUR_TECHNOLOGY {CONSTRUCTIONS::ARMOUR_TECHNOLOGY_ID, 
+                                           CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									       2.0, {{RESEARCH_LAB_ID, 2}}, 
+                                           RESOURCES{800, 200, 0, 0}};
 	
-	const CONSTRUCTION SHIELDING_TECHNOLOGY {CONSTRUCTIONS::SHIELDING_TECHNOLOGY, CONSTRUCTION_QUEUE::TECHNOLOGY, 
-									2.0, {}, RESOURCES{200, 600, 0, 0}};
+	const CONSTRUCTION SHIELDING_TECHNOLOGY {CONSTRUCTIONS::SHIELDING_TECHNOLOGY_ID, 
+                                             CONSTRUCTION_QUEUE::TECHNOLOGY, 
+                     						 2.0, {{RESEARCH_LAB_ID, 6}, {ENERGY_TECHNOLOGY_ID, 3}}, 
+                                             RESOURCES{200, 600, 0, 0}};
 
-	const CONSTRUCTION ARMOUR_TECHNOLOGY {CONSTRUCTIONS::ARMOUR_TECHNOLOGY_ID, CONSTRUCTION_QUEUE::TECHNOLOGY, 
-									2.0, {}, RESOURCES{1000, 0, 0, 0}};
+	const CONSTRUCTION ENERGY_TECHNOLOGY{CONSTRUCTIONS::ENERGY_TECHNOLOGY_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 1}}, 
+                                          RESOURCES{0, 800, 400, 0}};
+
+	const CONSTRUCTION COMBUSTION_DRIVE {CONSTRUCTIONS::COMBUSTION_DRIVE_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 1}, {ENERGY_TECHNOLOGY_ID, 1}}, 
+                                          RESOURCES{400, 0, 600, 0}};
+
+	const CONSTRUCTION IMPULSE_DRIVE {CONSTRUCTIONS::IMPULSE_DRIVE_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 2}, {ENERGY_TECHNOLOGY_ID, 1}}, 
+                                          RESOURCES{2000, 4000, 600, 0}};
+
+	const CONSTRUCTION HYPERSPACE_DRIVE {CONSTRUCTIONS::HYPERSPACE_DRIVE_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 7}, {ENERGY_TECHNOLOGY_ID, 3}}, 
+                                          RESOURCES{10000, 20000, 6000, 0}};
+
+	const CONSTRUCTION HYPERSPACE_TECHNOLOGY {CONSTRUCTIONS::HYPERSPACE_TECHNOLOGY_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 7}, {ENERGY_TECHNOLOGY_ID, 5}, 
+                                               {SHIELDING_TECHNOLOGY_ID, 5}}, 
+                                          RESOURCES{0, 4000, 2000, 0}};
+
+	const CONSTRUCTION LASER_TECHNOLOGY {CONSTRUCTIONS::LASER_TECHNOLOGY_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 1}, {ENERGY_TECHNOLOGY_ID, 2}}, 
+                                          RESOURCES{200, 100, 0, 0}};
+
+	const CONSTRUCTION ION_TECHNOLOGY {CONSTRUCTIONS::ION_TECHNOLOGY_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 4}, {LASER_TECHNOLOGY_ID, 5}, 
+                                               {ENERGY_TECHNOLOGY_ID, 4}}, 
+                                          RESOURCES{1000, 300, 100, 0}};
+
+	const CONSTRUCTION PLASMA_TECHNOLOGY {CONSTRUCTIONS::PLASMA_TECHNOLOGY_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 4}, {ENERGY_TECHNOLOGY_ID, 8}, 
+                                               {LASER_TECHNOLOGY_ID, 10}, {ION_TECHNOLOGY_ID, 5}}, 
+                                          RESOURCES{2000, 4000, 1000, 0}};
+
+	const CONSTRUCTION INTERGALACTIC_RESEARCH_NETWORK {CONSTRUCTIONS::INTERGALACTIC_RESEARCH_NETWORK_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 10}, {COMPUTER_TECHNOLOGY_ID, 8}, 
+                                               {HYPERSPACE_TECHNOLOGY_ID, 8}}, 
+                                          RESOURCES{240000, 400000, 160000, 0}};
+
+	const CONSTRUCTION ASTROPHYSICS {CONSTRUCTIONS::ASTROPHYSICS_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      1.75, {{RESEARCH_LAB_ID, 3}, {ESPIONAGE_TECHNOLOGY_ID, 4}, 
+                                                {IMPULSE_DRIVE_ID, 3}}, 
+                                          RESOURCES{4000, 8000, 4000, 0}};
+
+
+	const CONSTRUCTION GRAVITON_TECHNOLOGY {CONSTRUCTIONS::GRAVITON_TECHNOLOGY_ID, 
+                                          CONSTRUCTION_QUEUE::TECHNOLOGY, 
+									      2.0, {{RESEARCH_LAB_ID, 12}}, 
+                                          RESOURCES{0, 0, 0, 300000}};
+
+	const CONSTRUCTION SOLAR_SATELITE {CONSTRUCTIONS::SOLAR_SATELITE_ID, 
+                                          CONSTRUCTION_QUEUE::SHIPYARD_QUEUE, 
+									      2.0, {{SHIPYARD_ID, 1}}, 
+                                          RESOURCES{0, 2000, 500, 0}};
+	
+    const CONSTRUCTION COLONY_SHIP {CONSTRUCTIONS::COLONY_SHIP_ID, 
+                                          CONSTRUCTION_QUEUE::SHIPYARD_QUEUE, 
+									      2.0, {{RESEARCH_LAB_ID, 4}, {IMPULSE_DRIVE_ID, 3}}, 
+                                          RESOURCES{10000, 20000, 10000, 0}};
+
+	const CONSTRUCTION SMALL_CARGO {CONSTRUCTIONS::SMALL_CARGO_ID, 
+                                          CONSTRUCTION_QUEUE::SHIPYARD_QUEUE, 
+									      2.0, {{SHIPYARD_ID, 2}, {COMBUSTION_DRIVE_ID, 2}}, 
+                                          RESOURCES{2000, 2000, 0, 0}};
     enum PLAYER_CLASS {
         COLLECTOR,
         GENERAL,
@@ -290,7 +417,7 @@ namespace ogame {
         const RES enchancement_bonus = round(mine_extraction * enchancement);
         const RES plasma_bonus = round(mine_extraction * (player_options.plasma_technology_lvl / 100.0));
         const RES crawlers_bonus = round(planet_options.number_of_crawlers * crawler_extraction_bonus * (1.0 + (0.5 * is_collector)));
-		const RES commanding_staff_bonus = round(has_all_commanding_staff(player_options) * commanding_staff_extraction_bonus);
+		const RES commanding_staff_bonus = round(mine_extraction * has_all_commanding_staff(player_options) * commanding_staff_extraction_bonus);
 
         return collector_bonus + geologist_bonus + enchancement_bonus + plasma_bonus + crawlers_bonus + commanding_staff_bonus;
     }
@@ -303,10 +430,10 @@ namespace ogame {
         constexpr RES default_extraction = 30;
         constexpr RES extraction_multiplier = 30;
         const double position_bonus = position_extraction_bonus_m(planet_options.position);
-        const RES planet_extraction = floor(default_extraction * (1 + position_bonus));
-        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
+        const RES planet_extraction = floor(player_options.universe_speed * default_extraction * (1 + position_bonus));
+        const RES mine_extraction = floor(player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
                                                    
-        RES extraction = player_options.universe_speed * floor(planet_extraction + mine_extraction
+        RES extraction = floor(planet_extraction + mine_extraction
                          + calculate_additional_extraction(mine_extraction, planet_options.m_enchancement, planet_options, player_options));
         return extraction;
     }
@@ -318,10 +445,10 @@ namespace ogame {
         constexpr RES default_extraction = 15;
         constexpr RES extraction_multiplier = 20;
         const double position_bonus = position_extraction_bonus_c(planet_options.position);
-        const RES planet_extraction = floor(default_extraction * (1 + position_bonus));
-        const RES mine_extraction = floor(extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
+        const RES planet_extraction = floor(player_options.universe_speed * default_extraction * (1 + position_bonus));
+        const RES mine_extraction = floor(player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
 
-        RES extraction = player_options.universe_speed * floor(planet_extraction + mine_extraction
+        RES extraction = floor(planet_extraction + mine_extraction
                          + calculate_additional_extraction(mine_extraction, planet_options.c_enchancement, planet_options, player_options));
         return extraction;
     }
@@ -423,17 +550,23 @@ namespace ogame {
 
     SEC get_building_construction_time(const CONSTRUCTION& c, LVL lvl, LVL robot_factory_lvl, LVL nanite_factory_lvl)
     {
-        return floor(3600 * (get_construction_cost_m(c, lvl) + get_construction_cost_c(c, lvl)) / (2500 * (robot_factory_lvl + 1)) * power_cache::pow(0.5, nanite_factory_lvl));
+        double reduction = 1.0;
+        if (c.construction != NANITE_FACTORY_ID)
+        {
+            reduction = std::max(4 - lvl/2.0, 1.0);
+        }
+
+        return floor(3600 * (get_construction_cost_m(c, lvl) + get_construction_cost_c(c, lvl)) / ((2500 * reduction * (robot_factory_lvl + 1)) * power_cache::pow(2, nanite_factory_lvl)));
     }
 
     SEC get_technology_construction_time(const CONSTRUCTION& c, LVL lvl, LVL laboratory_lvl)
     {
-        return floor(3600 * (get_construction_cost_m(c, lvl) + get_construction_cost_c(c, lvl)) / 1000 * (laboratory_lvl + 1));
+        return floor(3600 * (get_construction_cost_m(c, lvl) + get_construction_cost_c(c, lvl)) / (1000 * (laboratory_lvl + 1)));
     }
 
-    SEC get_ship_construction_time(const CONSTRUCTION& c, LVL lvl, LVL shipyard_lvl, LVL nanite_factory_lvl)
+    SEC get_ship_construction_time(const CONSTRUCTION& c, LVL shipyard_lvl, LVL nanite_factory_lvl)
     {
-        return floor(3600 * (get_construction_cost_m(c, lvl) + get_construction_cost_c(c, lvl)) / (2500 * (shipyard_lvl + 1)) * power_cache::pow(0.5, nanite_factory_lvl));
+        return floor(3600 * (c.default_cost.m + c.default_cost.c) / ((2500 * (shipyard_lvl + 1)) * power_cache::pow(2, nanite_factory_lvl)));
     }
 
 }
