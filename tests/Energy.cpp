@@ -1,4 +1,3 @@
-
 #include "catch.hpp"
 #include "ogame.h"
 
@@ -47,22 +46,4 @@ TEST_CASE( "Energy" ) {
         planet_options.max_planet_temperature = -50;
         REQUIRE(get_solar_satelite_production(planet_options, player_options) == 29);
     }
-    //SECTION( "extraction_planet_temperature" ) {
-    //    planet_options.max_planet_temperature = -130;
-    //    REQUIRE(get_deuterium_extraction(0, planet_options, player_options) == 0);
-    //    REQUIRE(get_deuterium_extraction(12, planet_options, player_options) == 886);
-    //    REQUIRE(get_deuterium_extraction(8, planet_options, player_options) == 404);
-
-    //    planet_options.max_planet_temperature = -30;
-    //    REQUIRE(get_deuterium_extraction(12, planet_options, player_options) == 705);
-
-    //    planet_options.max_planet_temperature = 0;
-    //    REQUIRE(get_deuterium_extraction(12, planet_options, player_options) == 650);
-
-    //    planet_options.max_planet_temperature = 50;
-    //    REQUIRE(get_deuterium_extraction(12, planet_options, player_options) == 560);
-
-    //    planet_options.max_planet_temperature = 260;
-    //    REQUIRE(get_deuterium_extraction(12, planet_options, player_options) == 180);
-    //}
 }

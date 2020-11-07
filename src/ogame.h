@@ -272,6 +272,10 @@ namespace ogame {
         double c_enchancement = 0.0;
         double d_enchancement = 0.0;
         double e_enchancement = 0.0;
+        LVL robot_factory_lvl{0};
+        LVL shipyard_lvl{0};
+        LVL nanite_factory_lvl{0};
+        LVL research_lab_lvl{0};
     };
 
     //MINES
@@ -539,6 +543,21 @@ namespace ogame {
                          get_construction_cost_e(c, lvl)};
     }
 
+    inline constexpr bool is_building(int id)
+    {
+        return (id >= 0 && id <= CONSTRUCTIONS::MISSLE_SILO_ID);
+    }
+
+    inline constexpr bool is_technology(int id)
+    {
+        return (id >= CONSTRUCTIONS::MISSLE_SILO_ID && id <= CONSTRUCTIONS::GRAVITON_TECHNOLOGY_ID);
+    }
+
+    inline constexpr bool is_shipyard_construction(int id)
+    {
+        return (id > CONSTRUCTIONS::GRAVITON_TECHNOLOGY_ID);
+    }
+
     inline SEC get_building_construction_time(const CONSTRUCTION& c, LVL lvl, LVL robot_factory_lvl, LVL nanite_factory_lvl)
     {
         double reduction = 1.0;
@@ -559,6 +578,24 @@ namespace ogame {
     {
         return floor(3600 * (c.default_cost.m + c.default_cost.c) / ((2500 * (shipyard_lvl + 1)) * power_cache::pow(2, nanite_factory_lvl)));
     }
+
+    inline SEC get_construction_time(const CONSTRUCTION& c, LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
+    {
+        if (is_building(c.construction))
+        {
+            return round(get_building_construction_time(c, lvl, planet_options.robot_factory_lvl, planet_options.nanite_factory_lvl) / player_options.universe_speed);
+        }
+        else if (is_technology(c.construction))
+        {
+            return get_technology_construction_time(c, lvl, planet_options.research_lab_lvl);
+        }
+        else if (is_shipyard_construction(c.construction))
+        {
+            return get_ship_construction_time(c, planet_options.shipyard_lvl, planet_options.nanite_factory_lvl);
+        }
+        return 0;
+    }
+
 
 }
 
