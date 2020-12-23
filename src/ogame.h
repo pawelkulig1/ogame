@@ -1,5 +1,4 @@
-#ifndef __OGAME__H
-#define __OGAME__H
+#pragma once
 #include <cstdint>
 #include <cmath>
 #include <array>
@@ -7,10 +6,12 @@
 #include <map>
 
 namespace ogame {
+    namespace lib_options {
+        inline constexpr bool enable_caching{true};
+    }
     using LVL = uint_fast8_t;
     using RES = uint_fast64_t;
     using SEC = int_fast64_t;
-    using REQ = std::vector<std::pair<int, LVL> >;
     using TEMP = int_fast16_t;
 
     inline constexpr LVL max_lvl = 40;
@@ -64,6 +65,9 @@ namespace ogame {
         COLONY_SHIP_ID
     };
 
+    using REQ = std::pair<CONSTRUCTIONS, LVL>;
+    using REQUIREMENTS = std::vector<REQ >;
+
     enum CONSTRUCTION_QUEUE
     {
         BUILDING,
@@ -82,7 +86,7 @@ namespace ogame {
         CONSTRUCTIONS construction;
         CONSTRUCTION_QUEUE queue_index;
         double cost_ratio;
-        REQ requirements;
+        REQUIREMENTS requirements;
         RESOURCES default_cost;
     };
 
@@ -272,27 +276,43 @@ namespace ogame {
         double c_enchancement = 0.0;
         double d_enchancement = 0.0;
         double e_enchancement = 0.0;
+
         LVL robot_factory_lvl{0};
         LVL shipyard_lvl{0};
         LVL nanite_factory_lvl{0};
         LVL research_lab_lvl{0};
+
+        double m_production_factor = 1.0;
+        double c_production_factor = 1.0;
+        double d_production_factor = 1.0;
+        // solar plant
+        double e_production_factor = 1.0;
+        // fusion reactor
+        double f_production_factor = 1.0;
+        // satellites
+        double s_production_factor = 1.0;
+        // crawlers
+        double cr_production_factor = 1.0;
     };
 
     //MINES
     inline constexpr RES get_metal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
     inline constexpr RES get_crystal_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
     inline constexpr RES get_deuterium_extraction(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
-    inline constexpr RES get_energy_consumption(const CONSTRUCTION& c, LVL lvl);
+    inline constexpr RES get_energy_consumption(const CONSTRUCTION& c, LVL lvl, const PLANET_OPTIONS& planet_options);
     inline constexpr int get_max_number_of_crawlers(LVL metal_mine, LVL crystal_mine, LVL deuterium_extractor);
     inline constexpr double position_extraction_bonus(int planet_position);
 
+    //STORAGE
+    inline constexpr RES get_storage_space(LVL lvl);
+
     //ENERGY
-    inline constexpr RES get_solar_plant_production(LVL lvl);
-    inline RES get_fusion_reactor_production(LVL lvl, LVL energetic_technology_lvl);
-    inline constexpr RES get_solar_satelite_production(LVL lvl, TEMP max_planet_temperature);
+    inline constexpr RES get_solar_plant_production(LVL lvl, const PLANET_OPTIONS &planet_options, const PLAYER_OPTIONS& player_options);
+    inline RES get_fusion_reactor_production(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
+    inline constexpr RES get_solar_satelite_production(const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options);
 
     //FUSION
-    inline constexpr RES get_fusion_deuterium_consumption(LVL lvl);
+    inline constexpr RES get_fusion_deuterium_consumption(LVL lvl, const PLANET_OPTIONS& planet_options);
     
     //CONSTRUCTION
     inline RES get_construction_cost_m(const CONSTRUCTION& c, LVL lvl);
@@ -316,6 +336,15 @@ namespace ogame {
     }
     inline constexpr std::array<double, max_lvl> lvl_cache = generate_lvl_cache();
 
+    inline consteval std::array<double, max_lvl> generate_storage_cache()
+    {
+        std::array<double, max_lvl> cache;
+        for (int lvl=0; lvl<max_lvl; lvl++) {
+            cache[lvl] = 5000 * floor(2.5 * exp((20.0 / 33.0) * lvl));
+        }
+        return cache;
+    }
+    inline constexpr std::array<double, max_lvl> storage_cache = generate_storage_cache();
 
     // 0.5, (0 - 40)
     // (1.05 + energetic_technology_lvl * 0.01), lvl, en(0-40), lvl (0-40)
@@ -326,22 +355,30 @@ namespace ogame {
         static int cache_hit;
         static int cache_usage;
     public:
-        static double pow(double base, double exp)
+        static inline double pow(double base, double exp)
         {
-            ++cache_usage;
-            const auto it_base = cache.find(base);
-            if (it_base != cache.end())
+            if constexpr(lib_options::enable_caching)
             {
-                auto it_out = it_base->second.find(exp);
-                if (it_out != it_base->second.end())
+                ++cache_usage;
+                const auto it_base = cache.find(base);
+                if (it_base != cache.end())
                 {
-                    ++cache_hit;
-                    return it_out->second;
+                    auto it_out = it_base->second.find(exp);
+                    if (it_out != it_base->second.end())
+                    {
+                        ++cache_hit;
+                        return it_out->second;
+                    }
                 }
+                const double temp = ::pow(base, exp);
+                cache[base][exp] = temp;
+                return temp; 
             }
-            const double temp = ::pow(base, exp);
-            cache[base][exp] = temp;
-            return temp; 
+            else
+            {
+                return ::pow(base, exp);
+            }
+
         }
 
         static double get_cache_ratio()
@@ -409,7 +446,7 @@ namespace ogame {
         const RES geologist_bonus = player_options.has_geologist * round(mine_extraction * geologist_extraction_bonus);
         const RES enchancement_bonus = round(mine_extraction * enchancement);
         const RES plasma_extraction_bonus = round(mine_extraction * plasma_bonus * player_options.plasma_technology_lvl);
-        const RES crawlers_bonus = round(planet_options.number_of_crawlers * crawler_extraction_bonus * (1.0 + (0.5 * is_collector)));
+        const RES crawlers_bonus = round(planet_options.number_of_crawlers * crawler_extraction_bonus * (1.0 + (0.5 * is_collector)) * planet_options.cr_production_factor);
 		const RES commanding_staff_bonus = round(mine_extraction * has_all_commanding_staff(player_options) * commanding_staff_extraction_bonus);
 
         return collector_bonus + geologist_bonus + enchancement_bonus + plasma_extraction_bonus + crawlers_bonus + commanding_staff_bonus;
@@ -424,7 +461,7 @@ namespace ogame {
         constexpr RES extraction_multiplier = 30;
         const double position_bonus = position_extraction_bonus_m(planet_options.position);
         const RES planet_extraction = floor(player_options.universe_speed * default_extraction * (1 + position_bonus));
-        const RES mine_extraction = floor(player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
+        const RES mine_extraction = floor(planet_options.m_production_factor * player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
         const double plasma_bonus = 0.01;
                                                    
         RES extraction = floor(planet_extraction + mine_extraction
@@ -440,7 +477,7 @@ namespace ogame {
         constexpr RES extraction_multiplier = 20;
         const double position_bonus = position_extraction_bonus_c(planet_options.position);
         const RES planet_extraction = floor(player_options.universe_speed * default_extraction * (1 + position_bonus));
-        const RES mine_extraction = floor(player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
+        const RES mine_extraction = floor(planet_options.c_production_factor * player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1 + position_bonus));
         const double plasma_bonus = 0.0066;
 
         RES extraction = floor(planet_extraction + mine_extraction
@@ -452,7 +489,7 @@ namespace ogame {
     {
         static_assert(lvl_cache[1] != 0);
         constexpr RES extraction_multiplier = 10;
-        const RES mine_extraction = floor(player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1.44 - 0.004 * planet_options.max_planet_temperature));
+        const RES mine_extraction = floor(planet_options.d_production_factor * player_options.universe_speed * extraction_multiplier * lvl_cache[lvl] * (1.44 - 0.004 * planet_options.max_planet_temperature));
         const double plasma_bonus = 0.0033;
         
         RES extraction = player_options.universe_speed * floor(mine_extraction
@@ -460,11 +497,27 @@ namespace ogame {
         return extraction;
     }
 
-    inline constexpr RES get_energy_consumption(const CONSTRUCTION& c, LVL lvl)
+    inline constexpr RES get_storage_space(LVL lvl)
+    {
+        return storage_cache[lvl];
+    }
+
+    inline constexpr RES get_energy_consumption(const CONSTRUCTION& c, LVL lvl, const PLANET_OPTIONS& planet_options)
     {
         //TODO verify if ceil or floor
-        if (c.construction == CONSTRUCTIONS::METAL_MINE_ID || c.construction == CONSTRUCTIONS::CRYSTAL_MINE_ID) return floor(10 * lvl_cache[lvl]);
-        else if (c.construction == CONSTRUCTIONS::DEUTERIUM_SYNTHESIZER_ID) return floor(20 * lvl_cache[lvl]); 
+        if (c.construction == CONSTRUCTIONS::METAL_MINE_ID)
+        {
+            return floor(10 * lvl_cache[lvl] * planet_options.m_production_factor);
+        }
+
+        if (c.construction == CONSTRUCTIONS::CRYSTAL_MINE_ID)
+        {
+            return floor(10 * lvl_cache[lvl] * planet_options.c_production_factor);
+        }
+        else if (c.construction == CONSTRUCTIONS::DEUTERIUM_SYNTHESIZER_ID)
+        {
+            return floor(20 * lvl_cache[lvl] * planet_options.d_production_factor);
+        }
         return 0;
     }
 	
@@ -482,16 +535,15 @@ namespace ogame {
     inline constexpr RES get_solar_plant_production(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
         constexpr RES production_multiplier = 20;
-        const RES production = floor(production_multiplier * lvl_cache[lvl]);
-        const RES extraction =  floor(production
+        const RES production = floor(production_multiplier * lvl_cache[lvl] * planet_options.e_production_factor);
+        return floor(production
                          + calculate_additional_energy(production, planet_options, player_options));
-        return extraction;
     }
 
     inline RES get_fusion_reactor_production(LVL lvl, const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
         constexpr RES production_multiplier = 30;
-        const RES production = floor(production_multiplier * lvl * power_cache::pow((1.05 + player_options.energetic_technology_lvl * 0.01), lvl));
+        const RES production = floor(production_multiplier * lvl * power_cache::pow((1.05 + player_options.energetic_technology_lvl * 0.01), lvl) * planet_options.f_production_factor);
 
         const RES extraction = floor(production
                          + calculate_additional_energy(production, planet_options, player_options));
@@ -500,7 +552,7 @@ namespace ogame {
     
     inline constexpr RES get_solar_satelite_production(const PLANET_OPTIONS& planet_options, const PLAYER_OPTIONS& player_options)
     {
-        const RES production = floor((planet_options.max_planet_temperature + 140.0) / 6.0);
+        const RES production = floor(((planet_options.max_planet_temperature + 140.0) / 6.0) * planet_options.s_production_factor );
 
         const RES extraction = floor(production
                          + calculate_additional_energy(production, planet_options, player_options));
@@ -508,9 +560,9 @@ namespace ogame {
     }
 
     //FUSION
-    inline constexpr RES get_fusion_deuterium_consumption(LVL lvl)
+    inline constexpr RES get_fusion_deuterium_consumption(LVL lvl, const PLANET_OPTIONS& planet_options)
     {
-        return ceil(10 * lvl_cache[lvl]);
+        return ceil(10 * lvl_cache[lvl] * planet_options.f_production_factor);
     }
     
     //ALL
@@ -543,19 +595,34 @@ namespace ogame {
                          get_construction_cost_e(c, lvl)};
     }
 
-    inline constexpr bool is_building(int id)
+    inline constexpr bool is_building(CONSTRUCTIONS id)
     {
         return (id >= 0 && id <= CONSTRUCTIONS::MISSLE_SILO_ID);
     }
 
-    inline constexpr bool is_technology(int id)
+    inline constexpr bool is_technology(CONSTRUCTIONS id)
     {
         return (id >= CONSTRUCTIONS::MISSLE_SILO_ID && id <= CONSTRUCTIONS::GRAVITON_TECHNOLOGY_ID);
     }
 
-    inline constexpr bool is_shipyard_construction(int id)
+    inline constexpr bool is_shipyard_construction(CONSTRUCTIONS id)
     {
         return (id > CONSTRUCTIONS::GRAVITON_TECHNOLOGY_ID);
+    }
+
+    inline constexpr int get_buildings_size()
+    {
+        return CONSTRUCTIONS::MISSLE_SILO_ID + 1;
+    }
+
+    inline constexpr int get_technologies_size()
+    {
+        return CONSTRUCTIONS::GRAVITON_TECHNOLOGY_ID - CONSTRUCTIONS::MISSLE_SILO_ID + 1;
+    }
+
+    inline constexpr int get_constructions_size()
+    {
+        return CONSTRUCTIONS::COLONY_SHIP_ID + 1;
     }
 
     inline SEC get_building_construction_time(const CONSTRUCTION& c, LVL lvl, LVL robot_factory_lvl, LVL nanite_factory_lvl)
@@ -598,5 +665,3 @@ namespace ogame {
 
 
 }
-
-#endif

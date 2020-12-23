@@ -29,21 +29,21 @@ int main()
     auto end = std::chrono::steady_clock::now();
     std::cout << "time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << '\n';
 	
-    std::cout << out11 << '\n';
-    std::cout << out12 << '\n';
-    std::cout << out13 << '\n';
-    std::cout << out14 << '\n';
-	assert(out1 == 32901);
-	assert(out2 == 16242);
-	assert(out3 == 9249); //9250 enchancement_bonus option rounding error?
-	assert(out4 == 14657);
-	assert(out5 == 5445);
-	assert(out6 == 50);
-	assert(out7 == 5235); //5234??
-    assert(out8 == 60);
-    assert(out9 == 2306);
-    assert(out10 == 15); 
-    assert(out11 == 30); 
+    std::cout << out1 << out2 << out3 << out4 << out5 << out6 << out7 << out8 << out9 << out10 << out11 << out12 << out13 << out14 << '\n';
+    //std::cout << out12 << '\n';
+    //std::cout << out13 << '\n';
+    //std::cout << out14 << '\n';
+	//assert(out1 == 32901);
+	//assert(out2 == 16242);
+	//assert(out3 == 9249); //9250 enchancement_bonus option rounding error?
+	//assert(out4 == 14657);
+	//assert(out5 == 5445);
+	//assert(out6 == 50);
+	//assert(out7 == 5235); //5234??
+    //assert(out8 == 60);
+    //assert(out9 == 2306);
+    //assert(out10 == 15); 
+    //assert(out11 == 30); 
 
 
 
